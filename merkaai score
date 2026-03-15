@@ -1,0 +1,48 @@
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { name, email, score, tier, utilization, waste } = req.body;
+  const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
+  const WEB3FORMS_KEY = process.env.WEB3FORMS_KEY;
+  const MAURICE_EMAIL = process.env.MAURICE_EMAIL;
+
+  try {
+    // SendGrid email to user
+    await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        personalizations: [{
+          to: [{ email }],
+          subject: `Your MerkaAI Score: ${score}/100 (${tier})`
+        }],
+        from: { email: 'noreply@merkaai.com', name: 'MerkaAI' },
+        content: [{
+          type: 'text/html',
+          value: `<h1>Your MerkaAI Score: ${score}/100</h1><p>Tier: ${tier}</p><p>Utilization: ${utilization}%</p><p>Weekly Waste: ${waste}h</p>`
+        }]
+      })
+    });
+
+    // Web3Forms lead to Maurice
+    await fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        access_key: WEB3FORMS_KEY,
+        name, email,
+        subject: `🎯 New MerkaAI Lead: ${name}`,
+        message: `Name: ${name}\nEmail: ${email}\nScore: ${score}/100`
+      })
+    });
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+}
