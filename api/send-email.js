@@ -1,6 +1,14 @@
 import nodemailer from 'nodemailer';
 
 const handler = async (req, res) => {
+  // ✅ Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -32,18 +40,18 @@ const handler = async (req, res) => {
       html: resultsEmail,
     });
 
-    // Send lead notification via Web3Forms
-    const formData = new FormData();
-    formData.append('access_key', process.env.WEB3FORMS_KEY);
-    formData.append('name', userName);
-    formData.append('email', userEmail);
-    formData.append('score', score);
-    formData.append('dimensions', JSON.stringify(dimension_scores));
-    formData.append('message', `New MerkaAI Score: ${score}`);
-
+    // Send lead notification via Web3Forms (usando JSON, no FormData)
     await fetch('https://api.web3forms.com/submit', {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        access_key: process.env.WEB3FORMS_KEY,
+        name: userName,
+        email: userEmail,
+        score: score,
+        dimensions: JSON.stringify(dimension_scores),
+        message: `New MerkaAI Score: ${score}`
+      })
     });
 
     res.status(200).json({ success: true, message: 'Emails sent successfully' });
