@@ -34,7 +34,7 @@ const handler = async (req, res) => {
     `;
 
     await transporter.sendMail({
-      from: 'noreply@merkaai.com',
+      from: 'info@merkaai.com',
       to: userEmail,
       subject: `Tu MerkaAI Score: ${score}`,
       html: resultsEmail,
